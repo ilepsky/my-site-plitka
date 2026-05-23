@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПлиткаЭксперт</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/shop/css/style.css">
+</head>
+<body>
+
+<div class="top">
+<div class="container top-inner">
+<div class="logo" onclick="filterCategory('all')"><span>ПЛИТКА</span>Эксперт</div>
+<div class="contacts">
+<strong>Александр:</strong> +7 (978) 713‑92‑85<br>
+<strong>Евгений:</strong> +7 (978) 768‑20‑31<br>
+г. Симферополь, Проспект Победы 266
+</div>
+</div>
+</div>
+
+<div class="nav">
+<div class="container nav-inner">
+<a href="#catalog" onclick="filterCategory('all')">Каталог</a>
+<a href="#about">О нас</a>
+<a href="#features">Преимущества</a>
+</div>
+</div>
+
+<section class="hero">
+<img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1800&auto=format&fit=crop">
+<div class="hero-content">
+<h1>КЕРАМИЧЕСКАЯ ПЛИТКА И САНТЕХНИКА ДЛЯ ВАШЕГО ДОМА</h1>
+<button class="hero-btn" onclick="document.getElementById('catalog').scrollIntoView({behavior: 'smooth'})">ПЕРЕЙТИ К КАТАЛОГУ</button>
+</div>
+</section>
+
+<section class="section">
+<div class="container">
+
+<div class="categories">
+{% for category in categories %}
+<div class="card" onclick="filterCategory('{{ category.tag }}')">
+<img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop" alt="{{ category.name }}">
+<div class="card-title">{{ category.name }}</div>
+</div>
+{% endfor %}
+</div>
+
+<div class="banners">
+{% for banner in banners %}
+<div class="banner">
+<img src="https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=1200&auto=format&fit=crop" alt="{{ banner.title }}">
+<div class="banner-content">
+<h3>{{ banner.title }}</h3>
+<p>{{ banner.subtitle }}</p>
+</div>
+</div>
+{% endfor %}
+</div>
+
+</div>
+</section>
+
+<section class="section" id="catalog">
+<div class="container">
+<div class="catalog-header">
+<div class="title" id="catalogTitle">Популярные товары</div>
+<button class="reset-filter-btn" id="resetBtn" onclick="filterCategory('all')">Показать все товары</button>
+</div>
+
+<div class="products" id="productContainer"></div>
+
+<div class="features" id="features">
+<div class="feature"><div class="feature-icon">📦</div><div><h3>Широкий ассортимент</h3><p>Большой выбор плитки и сантехники</p></div></div>
+<div class="feature"><div class="feature-icon">🚚</div><div><h3>Доставка по Крыму</h3><p>Доставка в любой город</p></div></div>
+<div class="feature"><div class="feature-icon">🏆</div><div><h3>Лучшие цены</h3><p>Выгодные предложения и акции</p></div></div>
+</div>
+
+</div>
+</section>
+
+<section class="section" id="about">
+<div class="container">
+<div class="title">О НАС</div>
+<div class="about">
+<strong>ПлиткаЭксперт</strong> — ваш надежный помощник в выборе плитки и сантехники.
+Мы предлагаем качественные материалы от ведущих производителей по доступным ценам.
+Современные коллекции, премиальный сервис и доставка по всему Крыму.
+</div>
+</div>
+</section>
+
+<div class="cart-btn" onclick="toggleCart()">
+🛒 Корзина (<span id="count">0</span>)
+</div>
+
+<div class="cart" id="cart">
+    <div class="cart-header">
+        <h2>Корзина</h2>
+        <div class="close-cart" onclick="toggleCart()">✕</div>
+    </div>
+    <div id="cartItems"></div>
+    <div class="total">Итого: <span id="total">0</span> ₽</div>
+</div>
+
+<div class="product-page" id="productPage" onclick="closeProductPage(event)">
+    <div class="p-modal">
+        <div class="close-page" onclick="hideProductPage()">✕</div>
+        <div class="p-grid" id="productPageContent"></div>
+    </div>
+</div>
+
+<footer>
+<div class="container">
+© 2026 ПлиткаЭксперт — Все права защищены
+</div>
+</footer>
+
+<script src="/static/shop/js/main.js"></script>
+</body>
+</html>
