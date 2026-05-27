@@ -122,3 +122,94 @@ function toggleCart() { document.getElementById('cart').classList.toggle('open')
 // Инициализация
 loadProducts('all');
 updateCart();
+// Функция оформления заказа
+function showOrderForm() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (cart.length === 0) {
+        alert('Корзина пуста!');
+        return;
+    }
+
+    // Создаём модальное окно с формой
+    const modalHtml = `
+        <div id="orderModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center">
+            <div style="background:#fff;padding:30px;border-radius:20px;width:90%;max-width:500px;max-height:90vh;overflow:auto">
+                <h2 style="margin-bottom:20px">Оформление заказа</h2>
+                <form id="orderForm">
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px">Ваше имя *</label>
+                        <input type="text" name="name" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
+                    </div>
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px">Телефон *</label>
+                        <input type="tel" name="phone" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
+                    </div>
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px">Email</label>
+                        <input type="email" name="email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
+                    </div>
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px">Адрес доставки</label>
+                        <textarea name="address" rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px"></textarea>
+                    </div>
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px">Комментарий к заказу</label>
+                        <textarea name="comment" rows="2" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px"></textarea>
+                    </div>
+                    <div style="display:flex;gap:10px">
+                        <button type="submit" style="flex:1;padding:12px;background:#e87817;color:#fff;border:none;border-radius:8px;cursor:pointer">Отправить заказ</button>
+                        <button type="button" onclick="closeOrderModal()" style="flex:1;padding:12px;background:#666;color:#fff;border:none;border-radius:8px;cursor:pointer">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+        const orderData = {
+            name: this.name.value,
+            phone: this.phone.value,
+            email: this.email.value,
+            address: this.address.value,
+            comment: this.comment.value,
+            items: cart,
+            total: total
+        };
+
+        try {
+            const response = await fetch('/api/create-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(result.message);
+                localStorage.removeItem('cart');
+                updateCart();
+                closeOrderModal();
+                toggleCart(); // закрываем корзину
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        } catch (error) {
+            alert('Ошибка при отправке заказа: ' + error);
+        }
+    });
+}
+
+function closeOrderModal() {
+    const modal = document.getElementById('orderModal');
+    if (modal) modal.remove();
+}

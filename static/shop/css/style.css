@@ -675,3 +675,10 @@ footer {
         width: 100%;
     }
 }
+.checkout-btn {
+    transition: transform 0.2s;
+}
+.checkout-btn:hover {
+    transform: scale(1.02);
+    filter: brightness(1.05);
+}

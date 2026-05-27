@@ -1,6 +1,8 @@
+import json
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Product, Category, Banner
+from .models import Product, Category, Banner, Order
 
 
 def index(request):
@@ -66,3 +68,33 @@ def product_detail(request, id):
         return JsonResponse(data)
     except Product.DoesNotExist:
         return JsonResponse({'error': 'Товар не найден'}, status=404)
+
+
+@csrf_exempt  # временно для теста, потом можно убрать
+def create_order(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+
+        # Создаём заказ
+        order = Order.objects.create(
+            customer_name=data.get('name', ''),
+            customer_phone=data.get('phone', ''),
+            customer_email=data.get('email', ''),
+            customer_address=data.get('address', ''),
+            customer_comment=data.get('comment', ''),
+            items=data.get('items', []),
+            total_price=data.get('total', 0),
+            status='new'
+        )
+
+        return JsonResponse({
+            'success': True,
+            'order_id': order.id,
+            'message': f'Заказ #{order.id} успешно создан!'
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

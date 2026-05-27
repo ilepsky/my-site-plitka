@@ -103,6 +103,7 @@
     </div>
     <div id="cartItems"></div>
     <div class="total">Итого: <span id="total">0</span> ₽</div>
+    <button class="checkout-btn" onclick="showOrderForm()" style="width:100%;margin-top:15px;padding:15px;background:#e87817;color:#fff;border:none;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer">Оформить заказ</button>
 </div>
 
 <div class="product-page" id="productPage" onclick="closeProductPage(event)">
@@ -119,5 +120,137 @@
 </footer>
 
 <script src="/static/shop/js/main.js"></script>
+<script>
+// Функция оформления заказа
+function showOrderForm() {
+    console.log('Функция showOrderForm вызвана!');
+
+    // Получаем корзину из localStorage
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    if (cart.length === 0) {
+        alert('Корзина пуста! Добавьте товары перед оформлением заказа.');
+        return;
+    }
+
+    // Считаем общую сумму
+    let total = 0;
+    let itemsList = '';
+    for (let i = 0; i < cart.length; i++) {
+        total += cart[i].price;
+        itemsList += '<li style="margin-bottom:5px">' + cart[i].name + ' — ' + cart[i].price + ' ₽</li>';
+    }
+
+    // Создаём HTML формы
+    let modalHtml = `
+        <div id="orderModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;display:flex;align-items:center;justify-content:center">
+            <div style="background:#fff;padding:30px;border-radius:20px;width:90%;max-width:550px;max-height:90vh;overflow:auto;box-shadow:0 20px 40px rgba(0,0,0,0.2)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                    <h2 style="margin:0;color:#333">Оформление заказа</h2>
+                    <span onclick="closeOrderModal()" style="font-size:28px;cursor:pointer;color:#999">&times;</span>
+                </div>
+
+                <div style="background:#f5f5f5;padding:15px;border-radius:12px;margin-bottom:20px">
+                    <h3 style="margin:0 0 10px 0;font-size:16px">Ваш заказ:</h3>
+                    <ul style="margin:0;padding-left:20px">${itemsList}</ul>
+                    <div style="font-weight:bold;margin-top:10px">Итого: ${total} ₽</div>
+                </div>
+
+                <form id="orderForm">
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px;font-weight:600">Ваше имя *</label>
+                        <input type="text" name="name" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px">
+                    </div>
+
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px;font-weight:600">Телефон *</label>
+                        <input type="tel" name="phone" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px">
+                    </div>
+
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px;font-weight:600">Email</label>
+                        <input type="email" name="email" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px">
+                    </div>
+
+                    <div style="margin-bottom:15px">
+                        <label style="display:block;margin-bottom:5px;font-weight:600">Адрес доставки</label>
+                        <textarea name="address" rows="2" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px"></textarea>
+                    </div>
+
+                    <div style="margin-bottom:20px">
+                        <label style="display:block;margin-bottom:5px;font-weight:600">Комментарий</label>
+                        <textarea name="comment" rows="2" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px"></textarea>
+                    </div>
+
+                    <div style="display:flex;gap:10px">
+                        <button type="submit" style="flex:1;padding:14px;background:#e87817;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:16px;font-weight:600">Отправить заказ</button>
+                        <button type="button" onclick="closeOrderModal()" style="flex:1;padding:14px;background:#666;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:16px">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Назначаем обработчик формы
+    let form = document.getElementById('orderForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let total = 0;
+        for (let i = 0; i < cart.length; i++) {
+            total += cart[i].price;
+        }
+
+        let orderData = {
+            name: this.name.value,
+            phone: this.phone.value,
+            email: this.email.value,
+            address: this.address.value,
+            comment: this.comment.value,
+            items: cart,
+            total: total
+        };
+
+        try {
+            let response = await fetch('/api/create-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            });
+
+            let result = await response.json();
+
+            if (result.success) {
+                alert('✅ ' + result.message);
+                localStorage.removeItem('cart');
+                updateCart();
+                closeOrderModal();
+                // Закрываем корзину
+                let cartDiv = document.getElementById('cart');
+                if (cartDiv.classList.contains('open')) {
+                    cartDiv.classList.remove('open');
+                }
+            } else {
+                alert('❌ Ошибка: ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Ошибка при отправке: ' + error);
+        }
+    });
+}
+
+function closeOrderModal() {
+    let modal = document.getElementById('orderModal');
+    if (modal) modal.remove();
+}
+
+// Проверка, что функция определена
+console.log('showOrderForm функция определена:', typeof showOrderForm);
+</script>
 </body>
 </html>

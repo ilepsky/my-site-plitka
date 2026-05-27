@@ -52,3 +52,36 @@ class Banner(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('processing', 'В обработке'),
+        ('completed', 'Выполнен'),
+        ('cancelled', 'Отменён'),
+    ]
+
+    # Данные клиента
+    customer_name = models.CharField('Имя клиента', max_length=200)
+    customer_phone = models.CharField('Телефон', max_length=20)
+    customer_email = models.EmailField('Email', blank=True)
+    customer_address = models.TextField('Адрес доставки', blank=True)
+    customer_comment = models.TextField('Комментарий к заказу', blank=True)
+
+    # Данные заказа
+    items = models.JSONField('Товары в заказе', default=dict)  # храним список товаров
+    total_price = models.IntegerField('Общая сумма заказа')
+
+    # Статус и дата
+    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='new')
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Заказ #{self.id} - {self.customer_name} - {self.created_at.strftime('%d.%m.%Y %H:%M')}"
