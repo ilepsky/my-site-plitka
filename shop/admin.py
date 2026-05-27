@@ -7,6 +7,7 @@ from .models import Category, Product, Banner, Order
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'tag']
     search_fields = ['name', 'tag']
+    fields = ['name', 'tag', 'image']
 
 
 @admin.register(Product)

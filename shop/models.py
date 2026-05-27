@@ -2,17 +2,16 @@ from django.db import models
 
 
 class Category(models.Model):
-    """Категория товаров"""
-    name = models.CharField('Название категории', max_length=100)
-    tag = models.CharField('Тег (для фильтрации)', max_length=50, unique=True)
-    image = models.URLField('URL изображения', blank=True, default='')
+    name = models.CharField('Название', max_length=100)
+    tag = models.CharField('Тег', max_length=50, unique=True)
+    image = models.ImageField('Изображение', upload_to='categories/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-
-    def __str__(self):
-        return self.name
 
 
 class Product(models.Model):

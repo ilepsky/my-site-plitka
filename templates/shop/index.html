@@ -40,12 +40,16 @@
 <div class="container">
 
 <div class="categories">
-{% for category in categories %}
-<div class="card" onclick="filterCategory('{{ category.tag }}')">
-<img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop" alt="{{ category.name }}">
-<div class="card-title">{{ category.name }}</div>
-</div>
-{% endfor %}
+    {% for category in categories %}
+    <div class="card" onclick="filterCategory('{{ category.tag }}')">
+        {% if category.image %}
+            <img src="{{ category.image.url }}" alt="{{ category.name }}">
+        {% else %}
+            <img src="/static/images/no-image.jpg" alt="{{ category.name }}">
+        {% endif %}
+        <div class="card-title">{{ category.name }}</div>
+    </div>
+    {% endfor %}
 </div>
 
 <div class="banners">
