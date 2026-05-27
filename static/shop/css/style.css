@@ -660,7 +660,7 @@ footer {
         grid-template-columns: 1fr;
     }
     .logo {
-        font-size: 34px;
+        font-size: 28px;  /* уменьшил с 34px */
     }
     .hero {
         height: 430px;
@@ -669,10 +669,35 @@ footer {
         left: 24px;
     }
     .hero h1 {
-        font-size: 34px;
+        font-size: 28px;  /* уменьшил с 34px */
     }
     .cart {
         width: 100%;
+    }
+
+    /* ДОБАВЬТЕ ЭТИ СТИЛИ ДЛЯ ШАПКИ */
+    .top-inner {
+        flex-direction: column;  /* элементы в столбик */
+        text-align: center;
+        gap: 10px;
+    }
+
+    .contacts {
+        text-align: center;
+        font-size: 12px;  /* чуть меньше шрифт */
+    }
+
+    .contacts br {
+        display: none;  /* убираем перенос строки */
+    }
+
+    .contacts strong {
+        display: inline-block;
+    }
+
+    .nav a {
+        padding: 12px 16px;  /* уменьшаем отступы */
+        font-size: 14px;
     }
 }
 .checkout-btn {
