@@ -205,7 +205,7 @@ function showOrderForm() {
             });
             const result = await response.json();
             if (result.success) {
-                alert('✅ Заказ оформлен!');
+                alert(`✅ Заказ №${result.order_id} успешно оформлен!`);
                 localStorage.removeItem('cart');
                 cart = [];
                 updateCart();
