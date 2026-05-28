@@ -48,19 +48,26 @@ class OrderAdmin(admin.ModelAdmin):
         if not obj.items:
             return "Нет товаров"
 
+        # Формируем HTML таблицу с количеством
         total = 0
-        for item in obj.items:
-            total += item.get('price', 0)
-
         html = '<div style="background:#f8f9fa; padding:12px; border-radius:8px;"><table style="width:100%; border-collapse:collapse;">'
-        html += '<tr style="border-bottom:2px solid #ddd;"><th style="text-align:left; padding:8px;">Товар</th><th style="text-align:right; padding:8px;">Цена</th>'
+        html += '<tr style="border-bottom:2px solid #ddd;"><th style="text-align:left; padding:8px;">Товар</th><th style="text-align:right; padding:8px;">Кол-во</th><th style="text-align:right; padding:8px;">Цена</th><th style="text-align:right; padding:8px;">Сумма</th></tr>'
 
         for item in obj.items:
             name = item.get('name', '?')
+            qty = item.get('quantity', 1)
             price = item.get('price', 0)
-            html += f'<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">{name}</td><td style="text-align:right; padding:8px;">{price} ₽</td></tr>'
+            subtotal = price * qty
+            total += subtotal
 
-        html += f'<tr style="border-top:2px solid #ddd; font-weight:bold;"><td style="padding:8px;">ИТОГО:</td><td style="text-align:right; padding:8px;">{total} ₽</td></tr>'
+            html += f'<tr style="border-bottom:1px solid #eee;">'
+            html += f'<td style="padding:8px;">{name}</td>'
+            html += f'<td style="text-align:right; padding:8px;">{qty} шт.</td>'
+            html += f'<td style="text-align:right; padding:8px;">{price} ₽</td>'
+            html += f'<td style="text-align:right; padding:8px;">{subtotal} ₽</td>'
+            html += '</tr>'
+
+        html += f'<tr style="border-top:2px solid #ddd; font-weight:bold;"><td style="padding:8px;" colspan="3">ИТОГО:</td><td style="text-align:right; padding:8px;">{total} ₽</td></tr>'
         html += '</table></div>'
 
         return mark_safe(html)
