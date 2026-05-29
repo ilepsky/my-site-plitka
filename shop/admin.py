@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Category, Product, Banner, Order
+from import_export.admin import ImportExportModelAdmin
 
 
 @admin.register(Category)
@@ -11,11 +12,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ImportExportModelAdmin):
     list_display = ['name', 'price', 'category', 'in_stock', 'created_at']
     list_filter = ['category', 'in_stock']
     search_fields = ['name', 'desc']
     list_editable = ['price', 'in_stock']
+    # Поля, которые будут участвовать в импорте/экспорте
+    import_export_fields = ('name', 'price', 'category', 'tag', 'img', 'desc', 'specs', 'in_stock')
 
 
 @admin.register(Banner)
