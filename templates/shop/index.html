@@ -9,6 +9,47 @@
 <link rel="icon" type="image/png" href="/static/shop/images/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/static/shop/images/favicon.png">
 <meta name="yandex-verification" content="ae4c6084f5cfaa4b" />
+<style>
+/* Дополнительные стили для поиска */
+.search-container {
+    margin: 20px 0 30px 0;
+    text-align: center;
+}
+.search-container input {
+    width: 60%;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 40px 0 0 40px;
+    outline: none;
+    transition: 0.3s;
+}
+.search-container input:focus {
+    border-color: #e87817;
+}
+.search-container button {
+    padding: 12px 25px;
+    font-size: 16px;
+    background: #e87817;
+    color: white;
+    border: none;
+    border-radius: 0 40px 40px 0;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.search-container button:hover {
+    background: #d06b10;
+}
+@media (max-width: 700px) {
+    .search-container input {
+        width: 70%;
+        padding: 10px 15px;
+    }
+    .search-container button {
+        padding: 10px 20px;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -72,6 +113,16 @@
 
 <section class="section" id="catalog">
 <div class="container">
+
+<!-- ========== СТРОКА ПОИСКА ========== -->
+<div class="search-container">
+    <form id="searchForm" method="get" action="">
+        <input type="text" name="q" id="searchInput" placeholder="🔍 Поиск товаров..." value="{{ request.GET.q }}">
+        <button type="submit">Найти</button>
+    </form>
+</div>
+<!-- ========== КОНЕЦ СТРОКИ ПОИСКА ========== -->
+
 <div class="catalog-header">
 <div class="title" id="catalogTitle">Популярные товары</div>
 <button class="reset-filter-btn" id="resetBtn" onclick="filterCategory('all')">Показать все товары</button>
@@ -128,6 +179,9 @@
 
 <script src="/static/shop/js/main.js"></script>
 <script>
+// Переменная для хранения текущей категории
+let currentTag = 'all';
+
 // Функция оформления заказа
 function showOrderForm() {
     let cartData = JSON.parse(localStorage.getItem('cart')) || [];
@@ -220,13 +274,55 @@ function showOrderForm() {
         }
     });
 }
+
 function closeOrderModal() {
     let modal = document.getElementById('orderModal');
     if (modal) modal.remove();
 }
 
+// ========== ФУНКЦИИ ДЛЯ ПОИСКА ==========
+async function loadProductsWithSearch(tag = 'all') {
+    const query = document.getElementById('searchInput')?.value || '';
+    let url = `/api/filter/?tag=${tag}`;
+    if (query) {
+        url += `&q=${encodeURIComponent(query)}`;
+    }
+    const response = await fetch(url);
+    const data = await response.json();
+    productsData = data.products;
+    currentTag = tag;
+
+    const resetBtn = document.getElementById('resetBtn');
+    const catalogTitle = document.getElementById('catalogTitle');
+    if (tag !== 'all') {
+        resetBtn.style.display = 'block';
+        catalogTitle.innerText = data.category_name;
+    } else {
+        resetBtn.style.display = 'none';
+        catalogTitle.innerText = data.category_name;
+    }
+    renderProductsList(productsData);
+}
+
+// Обработчик отправки формы поиска
+const searchForm = document.getElementById('searchForm');
+if (searchForm) {
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadProductsWithSearch(currentTag);
+    });
+}
+
+// Переопределяем filterCategory для работы с поиском
+window.filterCategory = function(tag) {
+    currentTag = tag;
+    loadProductsWithSearch(tag);
+    document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
+};
+
 // Проверка, что функция определена
 console.log('showOrderForm функция определена:', typeof showOrderForm);
+console.log('Поиск подключен:', typeof loadProductsWithSearch);
 </script>
 </body>
 </html>

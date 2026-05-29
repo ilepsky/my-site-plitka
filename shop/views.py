@@ -1,7 +1,8 @@
 import json
-from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 from .models import Product, Category, Banner, Order
 
 
@@ -17,21 +18,51 @@ def index(request):
 
 
 def filter_products(request):
-    """Фильтрация товаров из БАЗЫ ДАННЫХ"""
+    """Фильтрация и поиск товаров"""
     tag = request.GET.get('tag', 'all')
+    query = request.GET.get('q', '').strip()
 
-    if tag == 'all':
-        products = Product.objects.filter(in_stock=True)
-        category_name = "Популярные товары"
-    else:
-        products = Product.objects.filter(tag=tag, in_stock=True)
-        # Получаем название категории из первого товара
-        if products.exists():
-            category_name = products.first().category.name
-        else:
-            category_name = "Товары отсутствуют"
+    products = Product.objects.filter(in_stock=True)
 
-    # Преобразуем товары в формат для JSON
+    # Фильтрация по категории
+    if tag != 'all':
+        products = products.filter(tag=tag)
+
+    # Поиск по запросу
+    if query:
+        # Основной поиск по текстовым полям
+        products = products.filter(
+            Q(name__icontains=query) |
+            Q(desc__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+        # Дополнительный поиск по характеристикам (specs)
+        extra_product_ids = []
+        all_products = Product.objects.filter(in_stock=True)
+        if tag != 'all':
+            all_products = all_products.filter(tag=tag)
+
+        for p in all_products:
+            try:
+                specs = p.specs
+                if isinstance(specs, dict):
+                    for key, value in specs.items():
+                        if query.lower() in str(value).lower():
+                            extra_product_ids.append(p.id)
+                            break
+                elif isinstance(specs, str):
+                    if query.lower() in specs.lower():
+                        extra_product_ids.append(p.id)
+            except:
+                pass
+
+        # Объединяем результаты
+        if extra_product_ids:
+            products = products | Product.objects.filter(id__in=extra_product_ids)
+        products = products.distinct()
+
+    # Преобразуем в список словарей для JSON
     products_list = []
     for p in products:
         products_list.append({
@@ -45,6 +76,14 @@ def filter_products(request):
             'specs': p.specs,
         })
 
+    # Определяем название для заголовка
+    if query:
+        category_name = f"🔍 Результаты поиска: {query}"
+    elif tag == 'all':
+        category_name = "Популярные товары"
+    else:
+        category_name = products[0].category.name if products.exists() else "Товары отсутствуют"
+
     return JsonResponse({
         'products': products_list,
         'category_name': category_name
@@ -52,7 +91,7 @@ def filter_products(request):
 
 
 def product_detail(request, id):
-    """Детальная информация о товаре из БАЗЫ ДАННЫХ"""
+    """Детальная информация о товаре"""
     try:
         product = Product.objects.get(id=id, in_stock=True)
         data = {
@@ -70,22 +109,28 @@ def product_detail(request, id):
         return JsonResponse({'error': 'Товар не найден'}, status=404)
 
 
-@csrf_exempt  # временно для теста, потом можно убрать
+@csrf_exempt
 def create_order(request):
+    """Создание нового заказа"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
 
     try:
         data = json.loads(request.body)
 
-        # Создаём заказ
+        # Нормализуем данные товаров (добавляем quantity если нет)
+        items = data.get('items', [])
+        for item in items:
+            if 'quantity' not in item:
+                item['quantity'] = 1
+
         order = Order.objects.create(
             customer_name=data.get('name', ''),
             customer_phone=data.get('phone', ''),
             customer_email=data.get('email', ''),
             customer_address=data.get('address', ''),
             customer_comment=data.get('comment', ''),
-            items=data.get('items', []),
+            items=items,
             total_price=data.get('total', 0),
             status='new'
         )

@@ -743,3 +743,23 @@ footer {
         align-self: flex-end;
     }
 }
+.search-header {
+    flex: 1;
+    max-width: 300px;
+}
+.search-header input {
+    width: 100%;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 30px;
+    outline: none;
+}
+.search-header button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
