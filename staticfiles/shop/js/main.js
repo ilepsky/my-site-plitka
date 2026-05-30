@@ -209,35 +209,30 @@ function toggleCart() {
 function showOrderForm() {
     // Получаем данные из localStorage
     let cartData = JSON.parse(localStorage.getItem('cart')) || [];
-    alert("Количество в корзине: " + cartData[0].quantity);
-    // Нормализация данных (добавляем quantity если нет)
-    for (let i = 0; i < cartData.length; i++) {
-        if (!cartData[i].quantity) {
-            cartData[i].quantity = 1;
-        }
-    }
 
-    // Проверка на пустую корзину
     if (cartData.length === 0) {
-        alert('Корзина пуста! Добавьте товары перед оформлением заказа.');
+        alert('Корзина пуста!');
         return;
     }
 
-    // Подсчёт итогов
+    // Подсчёт итогов с учётом quantity
     let total = 0;
     let totalItems = 0;
     let itemsList = '';
 
     for (let i = 0; i < cartData.length; i++) {
         const item = cartData[i];
-        const qty = item.quantity;  // Здесь должно быть правильное количество
+        const qty = item.quantity || 1;  // берём количество из корзины
         const subtotal = item.price * qty;
         total += subtotal;
         totalItems += qty;
-        itemsList += `<li style="margin-bottom:5px">${escapeHtml(item.name)} — ${item.price} ₽ × ${qty} = ${subtotal} ₽</li>`;
+        itemsList += `<li>${item.name} — ${item.price} ₽ × ${qty} = ${subtotal} ₽</li>`;
     }
 
-    // Создаём HTML модального окна
+    // Проверка через alert (временная)
+    alert('Товаров в заказе: ' + totalItems + ' шт.\nСумма: ' + total + ' ₽');
+
+    // Создаём модальное окно с формой
     const modalHtml = `
         <div id="orderModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10001;display:flex;align-items:center;justify-content:center">
             <div style="background:#fff;padding:30px;border-radius:20px;width:90%;max-width:500px;max-height:90vh;overflow:auto">
@@ -247,30 +242,30 @@ function showOrderForm() {
                 </div>
 
                 <div style="background:#f5f5f5;padding:15px;border-radius:12px;margin-bottom:20px">
-                    <h3 style="margin:0 0 10px 0;font-size:16px">Ваш заказ (${totalItems} шт.):</h3>
+                    <h3 style="margin:0 0 10px 0">Ваш заказ (${totalItems} шт.):</h3>
                     <ul style="margin:0;padding-left:20px">${itemsList}</ul>
                     <div style="font-weight:bold;margin-top:10px">Итого: ${total} ₽</div>
                 </div>
 
                 <form id="orderForm">
                     <div style="margin-bottom:15px">
-                        <label style="display:block;margin-bottom:5px">Ваше имя *</label>
+                        <label>Ваше имя *</label>
                         <input type="text" name="name" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
                     </div>
                     <div style="margin-bottom:15px">
-                        <label style="display:block;margin-bottom:5px">Телефон *</label>
+                        <label>Телефон *</label>
                         <input type="tel" name="phone" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
                     </div>
                     <div style="margin-bottom:15px">
-                        <label style="display:block;margin-bottom:5px">Email</label>
+                        <label>Email</label>
                         <input type="email" name="email" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px">
                     </div>
                     <div style="margin-bottom:15px">
-                        <label style="display:block;margin-bottom:5px">Адрес доставки</label>
+                        <label>Адрес доставки</label>
                         <textarea name="address" rows="2" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px"></textarea>
                     </div>
                     <div style="margin-bottom:20px">
-                        <label style="display:block;margin-bottom:5px">Комментарий</label>
+                        <label>Комментарий</label>
                         <textarea name="comment" rows="2" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px"></textarea>
                     </div>
                     <div style="display:flex;gap:10px">
@@ -284,17 +279,13 @@ function showOrderForm() {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Обработчик отправки формы
     document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // Снова получаем свежие данные из localStorage
         let finalCart = JSON.parse(localStorage.getItem('cart')) || [];
         let finalTotal = 0;
-
         for (let i = 0; i < finalCart.length; i++) {
-            const qty = finalCart[i].quantity || 1;
-            finalTotal += finalCart[i].price * qty;
+            finalTotal += finalCart[i].price * (finalCart[i].quantity || 1);
         }
 
         const orderData = {
@@ -310,33 +301,25 @@ function showOrderForm() {
         try {
             const response = await fetch('/api/create-order/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(orderData)
             });
-
             const result = await response.json();
-
             if (result.success) {
-                alert('✅ ' + result.message);
+                alert('✅ Заказ оформлен!');
                 localStorage.removeItem('cart');
-                cart = [];
                 updateCart();
                 closeOrderModal();
                 const cartDiv = document.getElementById('cart');
-                if (cartDiv && cartDiv.classList.contains('open')) {
-                    cartDiv.classList.remove('open');
-                }
+                if (cartDiv) cartDiv.classList.remove('open');
             } else {
                 alert('❌ Ошибка: ' + result.error);
             }
         } catch (error) {
-            alert('❌ Ошибка при отправке: ' + error);
+            alert('❌ Ошибка: ' + error);
         }
     });
 }
-
 function closeOrderModal() {
     const modal = document.getElementById('orderModal');
     if (modal) modal.remove();

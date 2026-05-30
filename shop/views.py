@@ -5,44 +5,37 @@ from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from .models import Product, Category, Banner, Order
 
-
 def index(request):
-    """Главная страница"""
     categories = Category.objects.all()
     banners = Banner.objects.filter(active=True)
-
     return render(request, 'shop/index.html', {
         'categories': categories,
         'banners': banners,
     })
 
-
 def filter_products(request):
-    """Фильтрация и поиск товаров"""
     tag = request.GET.get('tag', 'all')
     query = request.GET.get('q', '').strip()
 
     products = Product.objects.filter(in_stock=True)
 
-    # Фильтрация по категории
     if tag != 'all':
         products = products.filter(tag=tag)
 
-    # Поиск по запросу
     if query:
-        # Основной поиск по текстовым полям
+        # Поиск по всем текстовым полям и характеристикам
         products = products.filter(
             Q(name__icontains=query) |
             Q(desc__icontains=query) |
             Q(category__name__icontains=query)
         )
-
-        # Дополнительный поиск по характеристикам (specs)
+        
+        # Поиск по характеристикам (specs) через JSON
         extra_product_ids = []
         all_products = Product.objects.filter(in_stock=True)
         if tag != 'all':
             all_products = all_products.filter(tag=tag)
-
+        
         for p in all_products:
             try:
                 specs = p.specs
@@ -56,13 +49,12 @@ def filter_products(request):
                         extra_product_ids.append(p.id)
             except:
                 pass
-
-        # Объединяем результаты
+        
         if extra_product_ids:
             products = products | Product.objects.filter(id__in=extra_product_ids)
+        
         products = products.distinct()
 
-    # Преобразуем в список словарей для JSON
     products_list = []
     for p in products:
         products_list.append({
@@ -76,25 +68,18 @@ def filter_products(request):
             'specs': p.specs,
         })
 
-    # Определяем название для заголовка
     if query:
-        category_name = f"🔍 Результаты поиска: {query}"
+        category_name = f"🔍 Результаты поиска: {query} (найдено: {products.count()})"
     elif tag == 'all':
         category_name = "Популярные товары"
     else:
         category_name = products[0].category.name if products.exists() else "Товары отсутствуют"
 
-    return JsonResponse({
-        'products': products_list,
-        'category_name': category_name
-    })
-
-
+    return JsonResponse({'products': products_list, 'category_name': category_name})
 def product_detail(request, id):
-    """Детальная информация о товаре"""
     try:
         product = Product.objects.get(id=id, in_stock=True)
-        data = {
+        return JsonResponse({
             'id': product.id,
             'name': product.name,
             'price': product.price,
@@ -103,27 +88,20 @@ def product_detail(request, id):
             'img': product.img,
             'desc': product.desc,
             'specs': product.specs,
-        }
-        return JsonResponse(data)
+        })
     except Product.DoesNotExist:
         return JsonResponse({'error': 'Товар не найден'}, status=404)
 
-
 @csrf_exempt
 def create_order(request):
-    """Создание нового заказа"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
-
     try:
         data = json.loads(request.body)
-
-        # Нормализуем данные товаров (добавляем quantity если нет)
         items = data.get('items', [])
         for item in items:
             if 'quantity' not in item:
                 item['quantity'] = 1
-
         order = Order.objects.create(
             customer_name=data.get('name', ''),
             customer_phone=data.get('phone', ''),
@@ -134,12 +112,6 @@ def create_order(request):
             total_price=data.get('total', 0),
             status='new'
         )
-
-        return JsonResponse({
-            'success': True,
-            'order_id': order.id,
-            'message': f'Заказ #{order.id} успешно создан!'
-        })
-
+        return JsonResponse({'success': True, 'order_id': order.id, 'message': f'Заказ #{order.id} успешно создан!'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
